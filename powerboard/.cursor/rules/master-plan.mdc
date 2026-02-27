@@ -1,0 +1,167 @@
+---
+description: XML Master Plan for Token Analyzer Dashboard - defines visual hierarchy, UI zones, and AI generation instructions
+globs: ["src/components/Dashboard.jsx", "src/hooks/useTokenData.js", "src/lib/analyzer.js"]
+alwaysApply: true
+---
+
+# XML Master Plan - Token Analyzer Dashboard
+
+```xml
+<master_plan>
+  <project_name>Token Analyzer Dashboard</project_name>
+  <version>1.0</version>
+  
+  <visual_hierarchy_ui>
+    <zone_1>
+      <name>Header Section</name>
+      <location>Top of dashboard</location>
+      <components>
+        - Token Symbol: Display prominently (h2, 24px)
+        - Token Address: Truncated format (monospace, 12px)
+        - Risk Score: Large display (48px, bold, color-coded)
+        - Recommendation Badge: BUY/CAUTION/AVOID (button-style, color-coded)
+      </components>
+      <styling>
+        - Background: #ffffff
+        - Border: 2px inset #c0c0c0 (Windows 98 style)
+        - Layout: Flexbox, space-between alignment
+        - Padding: 16px
+      </styling>
+    </zone_1>
+    
+    <zone_2>
+      <name>Summary Box</name>
+      <location>Below header, above three pillars</location>
+      <components>
+        - Summary Text: Brief 2-3 sentence evaluation
+        - Background: #ffffe0 (light yellow, Windows 98 help box style)
+        - Border: 2px inset #c0c0c0
+      </components>
+    </zone_2>
+    
+    <zone_3>
+      <name>AI Summary & Core Evaluation</name>
+      <location>Primary content area</location>
+      <components>
+        - The AI Summary: Generate a dynamic text block evaluating the coin's safety. CRITICAL: You must read @meme-coin-analysis.mdc and use the exact logic and criteria defined there to evaluate the API data and generate this summary.
+        - Three Pillars Dashboard: Volume, Narrative, Distribution status cards
+        - Each pillar shows: Score (1-10), Status text, Red/Green flags
+        - Layout: Grid (3 columns, responsive)
+      </components>
+      <styling>
+        - Section Header: Uppercase, bold, #d4d0c8 background
+        - Pillar Cards: White background, 2px inset border
+        - Score Display: Large (32px), color-coded (red/yellow/green)
+      </styling>
+    </zone_3>
+    
+    <zone_4>
+      <name>Detailed Metrics Panels</name>
+      <location>Below three pillars</location>
+      <components>
+        - Liquidity Check: Market cap, liquidity, ratio, status
+        - Security Audit: Contract status, dev wallet history, selling activity
+        - Social Metrics: X followers, posts per hour, KOL involvement
+      </components>
+      <styling>
+        - Each panel: White background, 2px inset border
+        - Metric rows: Label:Value pairs (flexbox, space-between)
+        - Status badges: #d4d0c8 background
+        - Details text: Italic, smaller font
+      </styling>
+    </zone_4>
+    
+    <zone_5>
+      <name>Actionable Guidance</name>
+      <location>Below metrics panels</location>
+      <components>
+        - If Buying: Position size, entry strategy, profit targets, stop loss warning
+        - If Avoiding: Reason, alternative suggestions
+      </components>
+      <styling>
+        - Panel: White background, 2px inset border
+        - Lists: Standard bullet points, 12px font
+      </styling>
+    </zone_5>
+    
+    <zone_6>
+      <name>Flags Summary</name>
+      <location>Below actionable guidance</location>
+      <components>
+        - Red Flags: List of all red flags (left column, red text)
+        - Green Flags: List of all green flags (right column, green text)
+      </components>
+      <styling>
+        - Grid layout: 2 columns, responsive
+        - Red flags: Left border 4px solid #c00
+        - Green flags: Left border 4px solid #090
+        - Font size: 11px
+      </styling>
+    </zone_6>
+  </visual_hierarchy_ui>
+  
+  <code_standards>
+    <react>
+      - Use functional components with hooks
+      - Extract reusable components (PillarCard, etc.)
+      - Use proper prop types or TypeScript if available
+      - Keep components focused and single-purpose
+    </react>
+    <css>
+      - Windows 98 aesthetic: #c0c0c0 backgrounds, inset/outset borders
+      - Font: 'MS Sans Serif', sans-serif for UI, 'Courier New' for data
+      - Color scheme: Classic Windows grays, blues, and system colors
+      - Borders: 2px inset/outset for 3D effect
+      - No rounded corners (except system defaults)
+    </css>
+    <data_flow>
+      - useTokenData hook fetches and normalizes token data
+      - analyzeToken function processes data using three-pillar framework
+      - Dashboard component receives analysis object and renders all zones
+      - All evaluation logic must reference @meme-coin-analysis.mdc
+    </data_flow>
+  </code_standards>
+  
+  <ai_instructions>
+    <when_generating_code>
+      - Always read @meme-coin-analysis.mdc before writing analysis logic
+      - Use the exact evaluation criteria from that file
+      - Follow Windows 98 styling guidelines strictly
+      - Maintain the zone structure defined in visual_hierarchy_ui
+    </when_generating_code>
+    <when_generating_summary>
+      - CRITICAL: Read @meme-coin-analysis.mdc first
+      - Apply the three-pillar framework (Volume, Narrative, Distribution)
+      - Use the exact risk scoring methodology defined there
+      - Include all red flags and green flags as specified
+      - Generate actionable guidance based on the framework's priority order
+    </when_generating_summary>
+  </ai_instructions>
+  
+  <api_integration>
+    <data_sources>
+      - RugCheck API: Distribution and security data
+      - Bubblemaps: Holder visualization and bundle detection
+      - DexScreener: Volume, liquidity, price data
+      - Social APIs: X/Twitter metrics, KOL tracking
+    </data_sources>
+    <normalization>
+      - useTokenData.js hook normalizes all API responses
+      - Analyzer functions expect normalized format
+      - Handle missing data gracefully (UNKNOWN status, empty flags)
+    </normalization>
+  </api_integration>
+</master_plan>
+```
+
+## Key Points
+
+1. **Zone 3 AI Summary**: The instruction explicitly references `@meme-coin-analysis.mdc` and requires reading it before generating summaries.
+
+2. **Visual Hierarchy**: Clear zone structure from header → summary → pillars → metrics → guidance → flags.
+
+3. **Windows 98 Styling**: All CSS follows the classic Windows aesthetic with inset/outset borders and system colors.
+
+4. **Data Flow**: Token data → normalization → analysis → dashboard rendering.
+
+5. **AI Instructions**: Explicitly tells AI to read the meme-coin-analysis.mdc file when generating code or summaries.
