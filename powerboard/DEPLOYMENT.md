@@ -37,9 +37,18 @@ This guide explains how to deploy TurboToken to Vercel from any GitHub account.
 ### Option A: Deploy via Vercel Dashboard (Recommended)
 
 1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click **"Add New..."** → **"Project"**
-3. Import your GitHub repository
-4. **Important**: Set the **Root Directory** to `powerboard`
+2. **Connect GitHub** (if not already connected):
+   - Click your profile → **Settings** → **Git**
+   - Click **"Connect GitHub"** and authorize Vercel
+   - Grant access to the repository (or all repos)
+3. Click **"Add New..."** → **"Project"**
+4. In the repository search, type: `turbotoken.dev` or `turbomode0x-cmyk/turbotoken.dev`
+   - If the repo doesn't appear:
+     - Check that your GitHub account has access to the repo
+     - If it's a private repo, ensure Vercel has permission to access it
+     - Try refreshing the page or disconnecting/reconnecting GitHub
+5. Click **"Import"** on the repository
+6. **Important**: Set the **Root Directory** to `powerboard`
 5. Configure the project:
    - **Framework Preset**: Vite (auto-detected)
    - **Build Command**: `bun run build` (or `npm run build` if using npm)
