@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd powerboard && bun run build",
+  "buildCommand": "cd powerboard && npm install && npm run build",
   "outputDirectory": "powerboard/dist",
   "framework": "vite",
   "rootDirectory": "powerboard"
