@@ -129,7 +129,15 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
   const liquidity = analysis.liquidity_analysis || {}
   const security = analysis.security_checks || {}
   const chart = analysis.chart_lifecycle || {}
-  const liquidityAmount = Number(liquidity.liquidity || 0)
+  // Prefer AI liquidity metrics, but never show 0 if DexScreener has real data.
+  const dsPrimary = tokenData?.dexscreener?.primaryPair || {}
+  const rawLiqFromAnalysis = toFiniteNumber(liquidity.liquidity)
+  const rawMcFromAnalysis = toFiniteNumber(liquidity.market_cap)
+  const rawLiqFromDex = toFiniteNumber(dsPrimary.liquidityUsd)
+  const rawMcFromDex = toFiniteNumber(dsPrimary.marketCap)
+  const effectiveLiquidityAmount = rawLiqFromAnalysis ?? rawLiqFromDex ?? 0
+  const effectiveMarketCap = rawMcFromAnalysis ?? rawMcFromDex ?? 0
+  const liquidityAmount = Number(effectiveLiquidityAmount || 0)
   const launchpadName = String(tokenData?.rugcheck?.launchpad?.name || '').toLowerCase()
   const marketType = String(tokenData?.rugcheck?.markets?.[0]?.marketType || '').toLowerCase()
   const isLikelyPreBond =
@@ -298,8 +306,8 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
 
       <div className="zone-block">
         <div className="top-metric-grid">
-          <div className="top-metric-item"><span>MC:</span> <strong>${formatNumber(liquidity.market_cap)}</strong></div>
-          <div className="top-metric-item"><span>Liq:</span> <strong>${formatNumber(liquidity.liquidity)}</strong></div>
+          <div className="top-metric-item"><span>MC:</span> <strong>${formatNumber(effectiveMarketCap)}</strong></div>
+          <div className="top-metric-item"><span>Liq:</span> <strong>${formatNumber(effectiveLiquidityAmount)}</strong></div>
           <div className="top-metric-item"><span>Holders:</span> <strong>{holderCount !== null ? formatNumber(holderCount) : 'N/A'}</strong></div>
           <div className="top-metric-item"><span>Timing:</span> <strong>{timingDisplay}</strong></div>
         </div>
@@ -497,10 +505,10 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
       <div className="zone-block">
         <div className="section-header">LIQUIDITY CHECK</div>
         <div className="metrics-panel">
-          <Metric label="Market Cap" value={`$${formatNumber(liquidity.market_cap)}`} />
+          <Metric label="Market Cap" value={`$${formatNumber(effectiveMarketCap)}`} />
           <Metric
             label="Liquidity"
-            value={`$${formatNumber(liquidity.liquidity)}${liquidityParenNote}`}
+            value={`$${formatNumber(effectiveLiquidityAmount)}${liquidityParenNote}`}
           />
           {Number.isFinite(liquidity.liquidity_to_mcap_ratio) && (
             <Metric
