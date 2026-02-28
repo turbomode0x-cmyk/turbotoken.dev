@@ -48,7 +48,7 @@ TurboToken uses a **deterministic + AI hybrid** architecture:
 
 1. Clone the repository:
 ```bash
-git clone <repo-url>
+git clone https://github.com/YOUR_USERNAME/turbotoken.dev.git
 cd turbotoken.dev/powerboard
 ```
 
@@ -175,9 +175,20 @@ No test infrastructure currently exists. Recommended additions:
 - Test risk scoring logic
 - Test chart lifecycle computation
 
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed step-by-step instructions on deploying to Vercel from any GitHub account.
+
+Quick summary:
+1. Fork/clone the repository
+2. Set up Supabase (create project, run `supabase-schema.sql`)
+3. Get a Gemini API key from Google AI Studio
+4. Deploy to Vercel (set root directory to `powerboard`)
+5. Add environment variables in Vercel dashboard
+
 ## License
 
-[Add your license here]
+MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## Disclaimer
 
