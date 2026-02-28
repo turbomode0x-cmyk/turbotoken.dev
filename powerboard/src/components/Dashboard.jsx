@@ -1,5 +1,5 @@
 import './Dashboard.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function toFiniteNumber(value) {
   if (value == null || value === '') return null
@@ -57,6 +57,7 @@ function plainSignal(sig) {
 
 export default function Dashboard({ selectedCA, tokenData, analysis, loading, error, llmPending }) {
   const [tipMessage, setTipMessage] = useState('')
+  const [bubbleIframeError, setBubbleIframeError] = useState(false)
   if (!selectedCA) {
     return (
       <section className="dashboard">
@@ -136,6 +137,12 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
     ?? (Array.isArray(tokenData?.rugcheck?.holders) ? tokenData.rugcheck.holders.length : null)
   const bubbleIframeReady =
     typeof selectedCA === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(selectedCA.trim())
+
+  // Reset iframe error when token changes
+  useEffect(() => {
+    setBubbleIframeError(false)
+  }, [selectedCA])
+
   const summaryPillars = [
     { title: 'VOLUME', data: pillars.volume },
     { title: 'NARRATIVE', data: pillars.narrative },
@@ -202,19 +209,27 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
             </div>
           </div>
           <div className="risk-display">
-            <div
-              className={`risk-score-large ${
-                timingScore >= 8 ? 'success' : timingScore >= 4 ? 'warning' : 'danger'
-              }`}
-            >
-              {timingScoreText}
-            </div>
+            {llmPending ? (
+              <div className="win98-loading-dots">...</div>
+            ) : (
+              <div
+                className={`risk-score-large ${
+                  timingScore >= 8 ? 'success' : timingScore >= 4 ? 'warning' : 'danger'
+                }`}
+              >
+                {timingScoreText}
+              </div>
+            )}
             <div className="risk-label">ENTRY TIMING</div>
           </div>
           <div className="top-actions">
             <div className="action-status-block">
               <div className="action-status-label">ACTION STATUS</div>
-              <div className={`recommendation-badge ${recommendationClass}`}>{analysis.recommendation || 'CAUTION'}</div>
+              {llmPending ? (
+                <div className="win98-loading-small">LOADING...</div>
+              ) : (
+                <div className={`recommendation-badge ${recommendationClass}`}>{analysis.recommendation || 'CAUTION'}</div>
+              )}
             </div>
           </div>
         </div>
@@ -329,12 +344,43 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
           <div className="section-header" style={{ fontSize: '12px', marginBottom: '8px' }}>
             BUNDLER & INSIDER RISK
           </div>
-          {bubbleIframeReady && (
+          {bubbleIframeReady && !bubbleIframeError && (
             <iframe
               title="Bubble Maps"
               className="bubble-iframe"
               src={`https://iframe.bubblemaps.io/map?chain=solana&address=${selectedCA}&partnerId=demo`}
+              onError={() => setBubbleIframeError(true)}
+              onLoad={(e) => {
+                // Check if iframe loaded successfully
+                try {
+                  const iframe = e.target
+                  // If iframe content is blocked, this will help detect it
+                  if (iframe.contentWindow === null) {
+                    setBubbleIframeError(true)
+                  }
+                } catch (err) {
+                  // Cross-origin restrictions - assume it loaded if no error
+                  setBubbleIframeError(false)
+                }
+              }}
             />
+          )}
+          {bubbleIframeReady && bubbleIframeError && (
+            <div className="bubble-iframe-error" style={{
+              width: '100%',
+              height: '320px',
+              border: '2px inset #c0c0c0',
+              background: '#fff',
+              margin: '6px 0 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'MS Sans Serif', sans-serif",
+              fontSize: '12px',
+              color: '#808080'
+            }}>
+              Bubblemaps visualization unavailable
+            </div>
           )}
           {Number.isFinite(largestClusterPct) && (
             <Metric
