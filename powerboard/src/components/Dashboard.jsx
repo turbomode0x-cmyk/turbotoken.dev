@@ -1,5 +1,5 @@
 import './Dashboard.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 function toFiniteNumber(value) {
   if (value == null || value === '') return null
@@ -56,8 +56,22 @@ function plainSignal(sig) {
 }
 
 export default function Dashboard({ selectedCA, tokenData, analysis, loading, error, llmPending }) {
+  const prevLlmPendingRef = useRef(llmPending)
+  const prevAnalysisRef = useRef(analysis)
+  
+  // #region agent log
+  useEffect(() => {
+    if (prevLlmPendingRef.current !== llmPending || prevAnalysisRef.current !== analysis) {
+      fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:58',message:'Dashboard state change',data:{llmPending,prevLlmPending:prevLlmPendingRef.current,hasAnalysis:!!analysis,analysisRiskScore:analysis?.overall_risk_score,analysisRecommendation:analysis?.recommendation,prevAnalysisRiskScore:prevAnalysisRef.current?.overall_risk_score,selectedCA},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      prevLlmPendingRef.current = llmPending
+      prevAnalysisRef.current = analysis
+    }
+  }, [llmPending, analysis, selectedCA]);
+  // #endregion
+  
   const [tipMessage, setTipMessage] = useState('')
   const [bubbleIframeError, setBubbleIframeError] = useState(false)
+  const [bubbleIframeLoading, setBubbleIframeLoading] = useState(true)
   if (!selectedCA) {
     return (
       <section className="dashboard">
@@ -104,7 +118,13 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
     </div>
   ) : null
 
-  const recommendationClass = (analysis.recommendation || 'caution').toLowerCase()
+  // Only calculate recommendation and timing score when LLM has completed
+  // This prevents showing fallback values that will change when LLM finishes
+  // IMPORTANT: Do NOT calculate these when llmPending is true - show loading instead
+  const recommendationClass = llmPending === true ? null : (analysis?.recommendation || 'caution').toLowerCase()
+  // #region agent log
+  fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:122',message:'recommendationClass calculation',data:{llmPending,llmPendingType:typeof llmPending,llmPendingStrict:llmPending === true,recommendationClass,analysisRecommendation:analysis?.recommendation},timestamp:Date.now(),runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   const pillars = analysis.three_pillars || {}
   const liquidity = analysis.liquidity_analysis || {}
   const security = analysis.security_checks || {}
@@ -126,9 +146,15 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
   const clusterToLiqRatio = toFiniteNumber(bubblemapsSignals.cluster_to_liquidity_ratio)
   const top3ClustersPct = toFiniteNumber(bubblemapsSignals.top_3_clusters_percentage)
 
-  const riskScore = Number(analysis.overall_risk_score ?? 0)
-  const timingScore = Math.max(0, Math.min(10, 10 - riskScore))
-  const timingScoreText = `${timingScore}/10`
+  // Only calculate timing score when LLM has completed to prevent showing fallback values
+  // Check both llmPending and analysis.summary to ensure TurboToken opinion has loaded
+  const isAnalysisComplete = !llmPending && analysis?.summary
+  const riskScore = isAnalysisComplete ? Number(analysis.overall_risk_score ?? 0) : null
+  const timingScore = riskScore !== null ? Math.max(0, Math.min(10, 10 - riskScore)) : null
+  const timingScoreText = timingScore !== null ? `${timingScore}/10` : null
+  // #region agent log
+  fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:134',message:'timingScore calculation',data:{llmPending,riskScore,timingScore,timingScoreText,analysisRiskScore:analysis?.overall_risk_score},timestamp:Date.now(),runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   const phaseIsPreBond = String(chart.phase || '').toUpperCase() === 'PRE_BOND'
   const cycleStage = mapPhaseToStage(chart.phase)
   const timingDisplay = phaseIsPreBond ? 'PRE-BOND' : cycleStage
@@ -138,9 +164,10 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
   const bubbleIframeReady =
     typeof selectedCA === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(selectedCA.trim())
 
-  // Reset iframe error when token changes
+  // Reset iframe error and loading when token changes
   useEffect(() => {
     setBubbleIframeError(false)
+    setBubbleIframeLoading(true)
   }, [selectedCA])
 
   const summaryPillars = [
@@ -167,11 +194,13 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
   const whyNowTop = whyNow.slice(0, 3)
 
   const whatThisMeans =
-    recommendationClass === 'avoid'
+    !llmPending && recommendationClass === 'avoid'
       ? 'This setup is high risk right now. A few wallets can move price hard, and exits can be painful.'
-      : recommendationClass === 'caution'
+      : !llmPending && recommendationClass === 'caution'
         ? 'This setup is mixed. You can trade it, but keep size small and stay ready to exit fast.'
-        : 'This setup looks safer than most. Still use small size and watch for sudden changes.'
+        : !llmPending
+          ? 'This setup looks safer than most. Still use small size and watch for sudden changes.'
+          : 'Waiting for AI analysis...'
 
   const flipConditions = [
     top10Pct === null || top10Pct >= 35 ? 'Top 10 holder concentration drops under 35%.' : null,
@@ -209,27 +238,39 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
             </div>
           </div>
           <div className="risk-display">
-            {llmPending ? (
-              <div className="win98-loading-dots">...</div>
-            ) : (
-              <div
-                className={`risk-score-large ${
-                  timingScore >= 8 ? 'success' : timingScore >= 4 ? 'warning' : 'danger'
-                }`}
-              >
-                {timingScoreText}
-              </div>
-            )}
+            {(() => {
+              // #region agent log
+              fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:217',message:'Entry Timing render branch',data:{llmPending,timingScore,timingScoreText,showingLoading:!!llmPending,hasSummary:!!analysis?.summary},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+              // #endregion
+              const showLoading = llmPending || !analysis?.summary
+              return showLoading ? (
+                <div className="win98-loading-dots">...</div>
+              ) : (
+                <div
+                  className={`risk-score-large ${
+                    timingScore >= 8 ? 'success' : timingScore >= 4 ? 'warning' : 'danger'
+                  }`}
+                >
+                  {timingScoreText}
+                </div>
+              );
+            })()}
             <div className="risk-label">ENTRY TIMING</div>
           </div>
           <div className="top-actions">
             <div className="action-status-block">
               <div className="action-status-label">ACTION STATUS</div>
-              {llmPending ? (
-                <div className="win98-loading-small">LOADING...</div>
-              ) : (
-                <div className={`recommendation-badge ${recommendationClass}`}>{analysis.recommendation || 'CAUTION'}</div>
-              )}
+              {(() => {
+                // #region agent log
+                fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:233',message:'Action Status render branch',data:{llmPending,recommendationClass,analysisRecommendation:analysis?.recommendation,showingLoading:!!llmPending,hasSummary:!!analysis?.summary},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
+                const showLoading = llmPending || !analysis?.summary
+                return showLoading ? (
+                  <div className="win98-loading-small">LOADING...</div>
+                ) : (
+                  <div className={`recommendation-badge ${recommendationClass}`}>{analysis.recommendation || 'CAUTION'}</div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -270,7 +311,7 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
           <legend>3-SECOND SUMMARY</legend>
           <div className="quick-summary-grid">
             {summaryPillars.map((item) => (
-              <QuickMeter key={item.title} title={item.title} analysis={item.data} />
+              <QuickMeter key={item.title} title={item.title} analysis={item.data} showLoading={llmPending || !analysis?.summary} />
             ))}
           </div>
         </fieldset>
@@ -316,7 +357,6 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
                   : ''
             }
           />
-          <Metric label="Setup score (1–10)" value={`${chart.setup_quality_score ?? 5}/10`} />
           <Metric label="Trend (price path)" value={plainTrend(chart.trend_structure)} />
           <Metric label="Volume (trading activity)" value={plainVolume(chart.volume_confirmation)} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
@@ -332,7 +372,7 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
                 </p>
               </div>
             </details>
-            {chart.phase === 'MARKUP' && (chart.ape_signal === 'AVOID' || timingScore < 4) && (
+            {chart.phase === 'MARKUP' && !llmPending && (chart.ape_signal === 'AVOID' || (timingScore !== null && timingScore < 4)) && (
               <div className="strategy-conflict-note-inline">
                 Chart is going up (Markup phase), but rug risk is high.
               </div>
@@ -344,24 +384,60 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
           <div className="section-header" style={{ fontSize: '12px', marginBottom: '8px' }}>
             BUNDLER & INSIDER RISK
           </div>
-          {bubbleIframeReady && !bubbleIframeError && (
+          {bubbleIframeReady && bubbleIframeLoading && !bubbleIframeError && (
+            <div className="bubble-iframe-loading" style={{
+              width: '100%',
+              height: '320px',
+              border: '2px inset #c0c0c0',
+              background: '#fff',
+              margin: '6px 0 10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'MS Sans Serif', sans-serif",
+              fontSize: '12px',
+              color: '#808080'
+            }}>
+              <div className="win98-loading" style={{ width: '200px', height: '20px', marginBottom: '12px' }}>
+                <div className="win98-loading-bar" />
+              </div>
+              <div>Loading Bubble Maps visualization...</div>
+            </div>
+          )}
+          {bubbleIframeReady && !bubbleIframeError && !bubbleIframeLoading && (
             <iframe
               title="Bubble Maps"
               className="bubble-iframe"
               src={`https://iframe.bubblemaps.io/map?chain=solana&address=${selectedCA}&partnerId=demo`}
-              onError={() => setBubbleIframeError(true)}
+              sandbox="allow-scripts allow-same-origin"
+              allow="fullscreen"
+              referrerPolicy="no-referrer-when-downgrade"
+              loading="lazy"
+              onError={() => {
+                setBubbleIframeError(true)
+                setBubbleIframeLoading(false)
+              }}
               onLoad={(e) => {
-                // Check if iframe loaded successfully
-                try {
-                  const iframe = e.target
-                  // If iframe content is blocked, this will help detect it
-                  if (iframe.contentWindow === null) {
-                    setBubbleIframeError(true)
+                // Iframe load event fired - hide loading state
+                // Note: onLoad fires even if content is blocked by CORS, so we hide loading
+                setBubbleIframeLoading(false)
+                
+                // Additional check after a delay to see if iframe actually has content
+                setTimeout(() => {
+                  try {
+                    const iframe = e.target
+                    // Try to detect if iframe is actually blocked
+                    // This is best-effort due to CORS restrictions
+                    if (iframe.contentWindow === null) {
+                      // Might be blocked, but onLoad already fired so assume it's working
+                      // The iframe will show error state if it truly failed
+                    }
+                  } catch (err) {
+                    // CORS restrictions prevent checking - this is normal
+                    // Assume iframe loaded successfully since onLoad fired
                   }
-                } catch (err) {
-                  // Cross-origin restrictions - assume it loaded if no error
-                  setBubbleIframeError(false)
-                }
+                }, 1000)
               }}
             />
           )}
@@ -624,11 +700,26 @@ function Metric({ label, value, className = '' }) {
   )
 }
 
-function QuickMeter({ title, analysis }) {
+function QuickMeter({ title, analysis, showLoading = false }) {
   const safe = analysis || {}
   const score = Number(safe.score ?? 0)
   const pct = Math.max(0, Math.min(100, score * 10))
   const status = safe.status || 'UNKNOWN'
+
+  if (showLoading) {
+    return (
+      <div className="quick-meter">
+        <div className="quick-meter-title">{title}</div>
+        <div className="win98-loading" style={{ height: '16px', marginBottom: '6px' }}>
+          <div className="win98-loading-bar" />
+        </div>
+        <div className="quick-meter-row">
+          <span className="win98-loading-small" style={{ fontSize: '11px', padding: '2px 4px', minWidth: 'auto' }}>LOADING...</span>
+          <span className="win98-loading-small" style={{ fontSize: '11px', padding: '2px 4px', minWidth: 'auto' }}>...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="quick-meter">

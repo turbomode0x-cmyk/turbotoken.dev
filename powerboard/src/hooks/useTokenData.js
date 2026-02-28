@@ -372,6 +372,9 @@ export function useTokenData(initialTokenAddress = '') {
       // Show deterministic fallback immediately so the dashboard doesn't feel stuck
       const quickFallback = fallbackAnalysisFromXray(xrayPayload)
       if (requestId === requestIdRef.current) {
+        // #region agent log
+        fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useTokenData.js:376',message:'Setting fallback analysis',data:{llmPending,fallbackRiskScore:quickFallback?.overall_risk_score,fallbackRecommendation:quickFallback?.recommendation},timestamp:Date.now(),runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         setError(null)
         setAnalysis(quickFallback)
         // Stop "Analyzing..." once deterministic data is ready; LLM can continue in background.
@@ -408,6 +411,9 @@ export function useTokenData(initialTokenAddress = '') {
 
         const llmAnalysis = await response.json()
         console.log(`[useTokenData] LLM analysis complete`)
+        // #region agent log
+        fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useTokenData.js:412',message:'Setting LLM analysis and clearing llmPending',data:{llmRiskScore:llmAnalysis?.overall_risk_score,llmRecommendation:llmAnalysis?.recommendation},timestamp:Date.now(),runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         setError(null)
         setAnalysis(llmAnalysis)
         setLlmPending(false)

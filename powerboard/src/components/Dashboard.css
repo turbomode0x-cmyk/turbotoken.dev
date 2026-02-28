@@ -6,6 +6,8 @@
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: auto;
   text-rendering: optimizeSpeed;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .zone-block {
@@ -43,6 +45,12 @@
   background: #ffffff;
   border: 2px inset #c0c0c0;
   gap: 10px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.header-section > * {
+  min-width: 0;
 }
 
 .top-action-zone {
@@ -58,6 +66,9 @@
   border: 2px inset #c0c0c0;
   background: #fff;
   padding: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .token-info h2 {
@@ -72,6 +83,7 @@
   color: #000;
   margin: 0;
   word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .token-address-row {
@@ -310,6 +322,11 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(120px, 1fr));
   gap: 8px;
+  box-sizing: border-box;
+}
+
+.top-metric-grid > * {
+  min-width: 0;
 }
 
 .top-metric-item {
@@ -336,6 +353,11 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(150px, 1fr));
   gap: 10px;
+  box-sizing: border-box;
+}
+
+.quick-summary-grid > * {
+  min-width: 0;
 }
 
 .quick-meter {
@@ -545,6 +567,11 @@
   grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.action-strip > * {
+  min-width: 0;
 }
 
 .action-chip {
@@ -810,5 +837,86 @@
   75%,
   100% {
     content: '...';
+  }
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 4px;
+  }
+
+  .header-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .token-info-sunken {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .risk-display {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .top-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .top-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .quick-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .action-strip {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .flags-section {
+    grid-template-columns: 1fr;
+  }
+
+  .three-pillars {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-score-large {
+    font-size: 42px;
+  }
+
+  .token-info h2 {
+    font-size: 20px;
+  }
+
+  .top-action-zone {
+    position: static;
+  }
+
+  .zone-block {
+    margin-bottom: 10px;
+  }
+
+  .metrics-panel {
+    padding: 8px;
+  }
+
+  .metric-row {
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+
+  .metric-label,
+  .metric-value {
+    min-width: 0;
+    overflow-wrap: break-word;
   }
 }
