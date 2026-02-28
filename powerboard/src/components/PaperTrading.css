@@ -26,6 +26,15 @@
   gap: 8px;
 }
 
+.paper-login-status {
+  border: 2px inset #c0c0c0;
+  background: #e8e8e8;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #000;
+  font-family: 'MS Sans Serif', sans-serif;
+}
+
 .paper-rebalance-btn {
   border: 2px outset #0042b3;
   background: #0054e3;

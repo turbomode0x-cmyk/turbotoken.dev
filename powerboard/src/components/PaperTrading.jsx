@@ -79,6 +79,8 @@ export default function PaperTrading() {
     }
     setLoading(true)
     setStatus('')
+    // Note: Email subject line is configured in Supabase Dashboard:
+    // Authentication → Email Templates → Magic Link → Subject: "TurboToken Login"
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
@@ -432,7 +434,14 @@ export default function PaperTrading() {
   return (
     <section className="paper-window">
       <div className="paper-top">
-        <h2>PAPER TRADING</h2>
+        <div className="paper-top-left">
+          <h2>PAPER TRADING</h2>
+          {session?.user?.email && (
+            <div className="paper-login-status">
+              Logged in as: {session.user.email}
+            </div>
+          )}
+        </div>
         <button className="paper-signout-btn" onClick={signOut} disabled={loading}>
           Sign Out
         </button>
