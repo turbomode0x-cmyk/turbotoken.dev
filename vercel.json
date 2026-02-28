@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd powerboard && bun run build",
+  "outputDirectory": "powerboard/dist",
+  "framework": "vite",
+  "rootDirectory": "powerboard"
+}
