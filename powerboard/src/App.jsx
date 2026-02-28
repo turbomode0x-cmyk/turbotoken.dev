@@ -47,7 +47,7 @@ function App() {
       } else {
         setTipMsg(`Wallet address: ${wallet} (copy manually)`)
       }
-    } catch (err) {
+    } catch (_err) {
       setTipMsg(`Wallet address: ${wallet} (copy manually)`)
     }
   }
@@ -100,7 +100,7 @@ function App() {
         ? 'Copied CA to clipboard and opened Photon site'
         : 'Opened Photon site (clipboard unavailable)'
       setAffiliateStatus({ type: 'success', message: successMsg })
-    } catch (err) {
+    } catch (_err) {
       setAffiliateStatus({ type: 'error', message: 'Failed to open link. Please check your browser settings.' })
     }
   }

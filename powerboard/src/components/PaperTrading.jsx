@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient.js'
+import { buildPhotonUrl } from './WalletProvider.jsx'
 import './PaperTrading.css'
 
 const STARTING_BALANCE_SOL = 10

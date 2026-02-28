@@ -248,7 +248,10 @@ function fallbackAnalysisFromXray(xrayPayload) {
       liquidity_ratio: liquidityRatio,
       liquidity_to_mcap_ratio: liquidityRatio,
       lp_status: rugcheckSignals.lp_status || 'UNKNOWN',
-      status: hasCriticalLiquidity ? 'DANGEROUS' : highRisk ? 'RISKY' : 'UNKNOWN',
+      status: (() => {
+        const hasCriticalLiquidity = Number.isFinite(liquidityRatio) && liquidityRatio < 0.05
+        return hasCriticalLiquidity ? 'DANGEROUS' : highRisk ? 'RISKY' : 'UNKNOWN'
+      })(),
       details: 'Computed locally from DexScreener while AI is unavailable.',
       red_flags: liquidityRedFlags,
       green_flags: [],
