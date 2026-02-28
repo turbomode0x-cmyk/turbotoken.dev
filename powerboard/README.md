@@ -52,11 +52,10 @@ git clone <repo-url>
 cd turbotoken.dev/powerboard
 ```
 
-2. Install dependencies:
+2. Install dependencies (repo root, then app folder):
 ```bash
-bun install
-# or
-npm install
+cd powerboard
+bun install        # or: npm install
 ```
 
 3. Create `.env.local` file (see `.env.example` for template):
@@ -67,7 +66,7 @@ cp .env.example .env.local
 4. Configure environment variables:
 - `VITE_SUPABASE_URL`: Your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon key
-- `VITE_GEMINI_API_KEY`: Your Google Gemini API key
+- `GEMINI_API_KEY`: Your Google Gemini API key (server-side only)
 - `VITE_PHOTON_BOT_TEMPLATE`: Photon affiliate link template (optional)
 - `VITE_TIP_WALLET`: Solana wallet for tips (optional)
 
@@ -113,20 +112,22 @@ powerboard/
 
 ## Security Considerations
 
-### Client-Side API Keys
+### Gemini API Key (Server-Side Only)
 
-**Important**: The Gemini API key is exposed in the client bundle. This is a known limitation. Mitigations:
+The Gemini API key is **never sent to the browser**. All AI calls go through the `/api/gemini-eval` serverless function on Vercel, which reads `GEMINI_API_KEY` from server-only environment variables.
 
-1. **Restrict API Key**: In Google Cloud Console, restrict the key by HTTP referrer to only allow requests from your domain.
-2. **Key Rotation**: Implement regular key rotation procedures.
-3. **Future Improvement**: Consider moving to a backend proxy for production to keep keys server-side.
+Recommended practices:
+
+1. **Keep `GEMINI_API_KEY` server-only**: Do not expose it via any `VITE_*` variables.
+2. **Key Rotation**: Implement regular key rotation procedures in Google Cloud Console and Vercel.
+3. **Model Configuration**: Optionally set `GEMINI_MODELS` (server env) to control which models are used.
 
 ### Rate Limiting
 
-Currently, all API calls go directly from the browser. There is no client-side rate limiting. Consider:
+Currently, on-chain data APIs (DexScreener, RugCheck, Bubblemaps) are called directly from the browser. Consider:
 
 - Adding a client-side rate limiting wrapper
-- Moving to a backend proxy that can throttle requests
+- Moving these calls behind a backend proxy for heavy production traffic
 - Monitoring API usage to detect abuse
 
 ### CORS Dependency
@@ -135,18 +136,20 @@ The app relies on CORS being enabled for external APIs (DexScreener, RugCheck, B
 
 ## Environment Variables
 
-See `.env.example` for the complete list. Required variables:
+See `.env.example` for the complete list.
+
+**Client-exposed variables (Vite):**
 
 - `VITE_SUPABASE_URL`: Supabase project URL
 - `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key
-- `VITE_GEMINI_API_KEY`: Google Gemini API key
-
-Optional variables:
-
-- `VITE_GEMINI_MODELS`: Comma-separated list of Gemini models (default: gemini-2.0-flash,gemini-2.5-flash,gemini-2.5-pro)
 - `VITE_PHOTON_BOT_TEMPLATE`: Photon affiliate link template
 - `VITE_TIP_WALLET`: Solana wallet address for tips
 - `VITE_SNIPE_BOT_TEMPLATE`: Snipe bot link template
+
+**Server-only variables (Vercel):**
+
+- `GEMINI_API_KEY`: Google Gemini API key (server-side only)
+- `GEMINI_MODELS`: Comma-separated list of Gemini models (optional)
 
 ## Supabase Setup
 

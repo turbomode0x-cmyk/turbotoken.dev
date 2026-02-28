@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  evaluateTokenWithLLM,
   fetchTokenXRay,
   searchTokens,
   // Reuse the same deterministic risk scoring used after LLM analysis
@@ -380,12 +379,34 @@ export function useTokenData(initialTokenAddress = '') {
       }
 
       try {
-        console.log(`[useTokenData] Evaluating with LLM...`)
-        const llmAnalysis = await evaluateTokenWithLLM(xrayPayload)
+        console.log(`[useTokenData] Evaluating with LLM via /api/gemini-eval...`)
+        const response = await fetch('/api/gemini-eval', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ xrayPayload }),
+        })
+
         if (requestId !== requestIdRef.current) {
           console.log(`[useTokenData] Request ${requestId} superseded during LLM, aborting`)
           return null
         }
+
+        if (!response.ok) {
+          let serverError = 'AI analysis failed.'
+          try {
+            const payload = await response.json()
+            if (payload && typeof payload.error === 'string') {
+              serverError = payload.error
+            }
+          } catch {
+            // ignore JSON parse errors
+          }
+          throw new Error(serverError)
+        }
+
+        const llmAnalysis = await response.json()
         console.log(`[useTokenData] LLM analysis complete`)
         setError(null)
         setAnalysis(llmAnalysis)

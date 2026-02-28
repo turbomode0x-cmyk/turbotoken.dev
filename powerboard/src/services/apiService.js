@@ -2,8 +2,6 @@
 import { DEXSCREENER_SEARCH_URL, DEXSCREENER_TOKEN_URL, RUGCHECK_URL, BUBBLEMAPS_URL } from './api/constants.js'
 import { fetchJson, fetchJsonOrNull } from './api/fetcher.js'
 import { normalizeDexPair, uniqueByAddress, normalizeRugcheckSignals, normalizeBubblemapsSignals } from './api/normalizers.js'
-import { evaluateTokenWithLLM } from './ai/evaluator.js'
-import { computeDeterministicRiskScore } from './risk/scoring.js'
 
 // Public API: Token search
 export async function searchTokens(query) {
@@ -97,5 +95,4 @@ export async function fetchTokenXRay(tokenAddress) {
 }
 
 // Re-export public API functions
-export { evaluateTokenWithLLM } from './ai/evaluator.js'
 export { computeDeterministicRiskScore } from './risk/scoring.js'
