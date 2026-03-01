@@ -272,7 +272,7 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
               // #region agent log
               fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:217',message:'Entry Timing render branch',data:{llmPending,timingScore,timingScoreText,showingLoading:!!llmPending,hasSummary:!!analysis?.summary},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{});
               // #endregion
-              // Show loading if LLM is pending OR if summary is a fallback message
+              // Show loading if LLM is pending OR if summary is a fallback message OR if timing score is null
               const summary = analysis?.summary || ''
               const isFallbackSummary = 
                 summary.includes('Live market data loaded, but AI analysis is temporarily unavailable') ||
@@ -281,7 +281,8 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
                 summary === ''
               // Primary check: if LLM is pending, always show loading
               // Secondary check: if summary is fallback or empty, show loading
-              const showLoading = llmPending === true || isFallbackSummary
+              // Tertiary check: if timingScore is null (not calculated yet), show loading
+              const showLoading = llmPending === true || isFallbackSummary || timingScore === null
               if (showLoading) {
                 return <div className="win98-loading-dots">...</div>
               }
