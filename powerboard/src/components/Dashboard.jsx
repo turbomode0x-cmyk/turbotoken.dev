@@ -169,7 +169,10 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
 
   // Only calculate timing score when LLM has completed to prevent showing fallback values
   // Check both llmPending and analysis.summary to ensure TurboToken opinion has loaded
-  const isAnalysisComplete = !llmPending && analysis?.summary
+  // The fallback analysis has a specific summary message, so we check if it's the real LLM summary
+  const fallbackSummaryPattern = /Live market data loaded|AI analysis is temporarily unavailable|Loading live on-chain data/
+  const hasRealLLMSummary = analysis?.summary && !fallbackSummaryPattern.test(analysis.summary)
+  const isAnalysisComplete = !llmPending && hasRealLLMSummary
   const riskScore = isAnalysisComplete ? Number(analysis.overall_risk_score ?? 0) : null
   const timingScore = riskScore !== null ? Math.max(0, Math.min(10, 10 - riskScore)) : null
   const timingScoreText = timingScore !== null ? `${timingScore}/10` : null
@@ -263,7 +266,9 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
               // #region agent log
               fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:217',message:'Entry Timing render branch',data:{llmPending,timingScore,timingScoreText,showingLoading:!!llmPending,hasSummary:!!analysis?.summary},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{});
               // #endregion
-              const showLoading = llmPending || !analysis?.summary
+              const fallbackSummaryPattern = /Live market data loaded|AI analysis is temporarily unavailable|Loading live on-chain data/
+              const hasRealLLMSummary = analysis?.summary && !fallbackSummaryPattern.test(analysis.summary)
+              const showLoading = llmPending || !hasRealLLMSummary
               return showLoading ? (
                 <div className="win98-loading-dots">...</div>
               ) : (
@@ -285,7 +290,9 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
                 // #region agent log
                 fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:233',message:'Action Status render branch',data:{llmPending,recommendationClass,analysisRecommendation:analysis?.recommendation,showingLoading:!!llmPending,hasSummary:!!analysis?.summary},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{});
                 // #endregion
-                const showLoading = llmPending || !analysis?.summary
+                const fallbackSummaryPattern = /Live market data loaded|AI analysis is temporarily unavailable|Loading live on-chain data/
+                const hasRealLLMSummary = analysis?.summary && !fallbackSummaryPattern.test(analysis.summary)
+                const showLoading = llmPending || !hasRealLLMSummary
                 return showLoading ? (
                   <div className="win98-loading-small">LOADING...</div>
                 ) : (
@@ -331,9 +338,13 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
         <fieldset className="quick-summary-group">
           <legend>3-SECOND SUMMARY</legend>
           <div className="quick-summary-grid">
-            {summaryPillars.map((item) => (
-              <QuickMeter key={item.title} title={item.title} analysis={item.data} showLoading={llmPending || !analysis?.summary} />
-            ))}
+            {summaryPillars.map((item) => {
+              const fallbackSummaryPattern = /Live market data loaded|AI analysis is temporarily unavailable|Loading live on-chain data/
+              const hasRealLLMSummary = analysis?.summary && !fallbackSummaryPattern.test(analysis.summary)
+              return (
+                <QuickMeter key={item.title} title={item.title} analysis={item.data} showLoading={llmPending || !hasRealLLMSummary} />
+              )
+            })}
           </div>
         </fieldset>
 
