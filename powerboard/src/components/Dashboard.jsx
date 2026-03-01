@@ -275,11 +275,15 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
               const isFallbackSummary = 
                 summary.includes('Live market data loaded, but AI analysis is temporarily unavailable') ||
                 summary.includes('Loading live on-chain data') ||
-                summary === 'No analysis available yet.'
-              const showLoading = llmPending || isFallbackSummary || !summary
-              return showLoading ? (
-                <div className="win98-loading-dots">...</div>
-              ) : (
+                summary === 'No analysis available yet.' ||
+                summary === ''
+              // Primary check: if LLM is pending, always show loading
+              // Secondary check: if summary is fallback or empty, show loading
+              const showLoading = llmPending === true || isFallbackSummary
+              if (showLoading) {
+                return <div className="win98-loading-dots">...</div>
+              }
+              return (
                 <div
                   className={`risk-score-large ${
                     timingScore >= 8 ? 'success' : timingScore >= 4 ? 'warning' : 'danger'
@@ -303,11 +307,15 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
                 const isFallbackSummary = 
                   summary.includes('Live market data loaded, but AI analysis is temporarily unavailable') ||
                   summary.includes('Loading live on-chain data') ||
-                  summary === 'No analysis available yet.'
-                const showLoading = llmPending || isFallbackSummary || !summary
-                return showLoading ? (
-                  <div className="win98-loading-small">LOADING...</div>
-                ) : (
+                  summary === 'No analysis available yet.' ||
+                  summary === ''
+                // Primary check: if LLM is pending, always show loading
+                // Secondary check: if summary is fallback or empty, show loading
+                const showLoading = llmPending === true || isFallbackSummary
+                if (showLoading) {
+                  return <div className="win98-loading-small">LOADING...</div>
+                }
+                return (
                   <div className={`recommendation-badge ${recommendationClass}`}>{analysis.recommendation || 'CAUTION'}</div>
                 );
               })()}
