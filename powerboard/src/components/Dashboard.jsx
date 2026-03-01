@@ -174,11 +174,13 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
   const isFallbackSummary = 
     summary.includes('Live market data loaded, but AI analysis is temporarily unavailable') ||
     summary.includes('Loading live on-chain data') ||
-    summary === 'No analysis available yet.'
+    summary === 'No analysis available yet.' ||
+    summary === ''
   const hasRealLLMSummary = summary && !isFallbackSummary
   const isAnalysisComplete = !llmPending && hasRealLLMSummary
+  // Don't calculate timing score at all if analysis isn't complete - this prevents showing fallback values
   const riskScore = isAnalysisComplete ? Number(analysis.overall_risk_score ?? 0) : null
-  const timingScore = riskScore !== null ? Math.max(0, Math.min(10, 10 - riskScore)) : null
+  const timingScore = isAnalysisComplete && riskScore !== null ? Math.max(0, Math.min(10, 10 - riskScore)) : null
   const timingScoreText = timingScore !== null ? `${timingScore}/10` : null
   // #region agent log
   fetch('http://127.0.0.1:7250/ingest/1be7fb10-c169-47d1-9471-7bf7726b9708',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:134',message:'timingScore calculation',data:{llmPending,riskScore,timingScore,timingScoreText,analysisRiskScore:analysis?.overall_risk_score},timestamp:Date.now(),runId:'run1',hypothesisId:'B'})}).catch(()=>{});
@@ -311,7 +313,9 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
                   summary === ''
                 // Primary check: if LLM is pending, always show loading
                 // Secondary check: if summary is fallback or empty, show loading
-                const showLoading = llmPending === true || isFallbackSummary
+                // Also check if recommendation exists (real LLM analysis should have one)
+                const hasRealRecommendation = analysis?.recommendation && !isFallbackSummary
+                const showLoading = llmPending === true || isFallbackSummary || !hasRealRecommendation
                 if (showLoading) {
                   return <div className="win98-loading-small">LOADING...</div>
                 }
