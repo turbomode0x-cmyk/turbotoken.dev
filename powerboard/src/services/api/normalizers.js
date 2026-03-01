@@ -67,6 +67,29 @@ export function normalizeDexPair(pair) {
       buys: Number(pair.txns?.h24?.buys || 0),
       sells: Number(pair.txns?.h24?.sells || 0),
     },
+    // Sniper detection: high m5 buy activity relative to h24 indicates early snipers
+    sniper_activity: (() => {
+      const m5Buys = Number(pair.txns?.m5?.buys || 0)
+      const h24Buys = Number(pair.txns?.h24?.buys || 0)
+      if (h24Buys > 0 && m5Buys > 0) {
+        const sniperRatio = m5Buys / h24Buys
+        // If >50% of buys happened in first 5 minutes, likely snipers
+        return {
+          detected: sniperRatio > 0.5,
+          ratio: sniperRatio,
+          m5_buys: m5Buys,
+          h24_buys: h24Buys,
+          risk_level: sniperRatio > 0.7 ? 'HIGH' : sniperRatio > 0.5 ? 'MODERATE' : 'LOW',
+        }
+      }
+      return {
+        detected: false,
+        ratio: null,
+        m5_buys: m5Buys,
+        h24_buys: h24Buys,
+        risk_level: 'UNKNOWN',
+      }
+    })(),
   }
 }
 
@@ -152,6 +175,9 @@ export function normalizeBubblemapsSignals(bubblemapsPayload, liquidityUsd = 0) 
       top_3_clusters_percentage: null,
       insider_supply_percentage: null,
       cluster_to_liquidity_ratio: null,
+      bundler_detected: false,
+      bundler_risk_level: 'UNKNOWN',
+      bundler_details: null,
       source_meta: { source: 'Bubblemaps', confidence: 'LOW', timestamp: new Date().toISOString() },
     }
   }
@@ -161,6 +187,9 @@ export function normalizeBubblemapsSignals(bubblemapsPayload, liquidityUsd = 0) 
     top_3_clusters_percentage: null,
     insider_supply_percentage: null,
     cluster_to_liquidity_ratio: null,
+    bundler_detected: false,
+    bundler_risk_level: 'UNKNOWN',
+    bundler_details: null,
     source_meta: { source: 'Bubblemaps', confidence: 'MEDIUM', timestamp: new Date().toISOString() },
   }
 
@@ -204,6 +233,21 @@ export function normalizeBubblemapsSignals(bubblemapsPayload, liquidityUsd = 0) 
       signals.largest_cluster_percentage = sortedClusters[0]
       signals.top_3_clusters_percentage = sortedClusters.slice(0, 3).reduce((sum, p) => sum + p, 0)
       signals.source_meta.confidence = 'HIGH'
+      
+      // Detect bundlers: large clusters indicate coordinated control
+      if (signals.largest_cluster_percentage >= 30) {
+        signals.bundler_detected = true
+        signals.bundler_risk_level = 'CRITICAL'
+        signals.bundler_details = `Largest cluster controls ${signals.largest_cluster_percentage.toFixed(1)}% of supply - likely bundler/coordinated control`
+      } else if (signals.largest_cluster_percentage >= 20) {
+        signals.bundler_detected = true
+        signals.bundler_risk_level = 'HIGH'
+        signals.bundler_details = `Largest cluster controls ${signals.largest_cluster_percentage.toFixed(1)}% of supply - possible bundler activity`
+      } else if (signals.largest_cluster_percentage >= 15) {
+        signals.bundler_detected = true
+        signals.bundler_risk_level = 'MODERATE'
+        signals.bundler_details = `Largest cluster controls ${signals.largest_cluster_percentage.toFixed(1)}% of supply - monitor for bundler patterns`
+      }
     }
   }
 
@@ -235,6 +279,21 @@ export function normalizeBubblemapsSignals(bubblemapsPayload, liquidityUsd = 0) 
         signals.largest_cluster_percentage = sortedClusters[0]
         signals.top_3_clusters_percentage = sortedClusters.slice(0, 3).reduce((sum, p) => sum + p, 0)
         signals.source_meta.confidence = 'HIGH'
+        
+        // Detect bundlers from node-based clusters
+        if (signals.largest_cluster_percentage >= 30) {
+          signals.bundler_detected = true
+          signals.bundler_risk_level = 'CRITICAL'
+          signals.bundler_details = `Largest cluster controls ${signals.largest_cluster_percentage.toFixed(1)}% of supply - likely bundler/coordinated control`
+        } else if (signals.largest_cluster_percentage >= 20) {
+          signals.bundler_detected = true
+          signals.bundler_risk_level = 'HIGH'
+          signals.bundler_details = `Largest cluster controls ${signals.largest_cluster_percentage.toFixed(1)}% of supply - possible bundler activity`
+        } else if (signals.largest_cluster_percentage >= 15) {
+          signals.bundler_detected = true
+          signals.bundler_risk_level = 'MODERATE'
+          signals.bundler_details = `Largest cluster controls ${signals.largest_cluster_percentage.toFixed(1)}% of supply - monitor for bundler patterns`
+        }
       }
     }
   }

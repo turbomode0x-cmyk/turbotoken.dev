@@ -153,6 +153,19 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
   const insiderSupplyPct = toFiniteNumber(bubblemapsSignals.insider_supply_percentage)
   const clusterToLiqRatio = toFiniteNumber(bubblemapsSignals.cluster_to_liquidity_ratio)
   const top3ClustersPct = toFiniteNumber(bubblemapsSignals.top_3_clusters_percentage)
+  const bundlerDetected = bubblemapsSignals.bundler_detected === true
+  const bundlerRiskLevel = bubblemapsSignals.bundler_risk_level || 'UNKNOWN'
+  const bundlerDetails = bubblemapsSignals.bundler_details || null
+  
+  // Extract sniper activity from DexScreener data
+  const sniperActivity = tokenData?.dexscreener?.primaryPair?.sniper_activity || {}
+  const sniperDetected = sniperActivity.detected === true
+  const sniperRiskLevel = sniperActivity.risk_level || 'UNKNOWN'
+  
+  // Extract KOL info from LLM analysis
+  const socialMomentum = analysis?.social_momentum || {}
+  const kolInvolvement = socialMomentum.kol_involvement || socialMomentum.kols || null
+  const kolList = Array.isArray(kolInvolvement) ? kolInvolvement : (kolInvolvement ? [kolInvolvement] : [])
 
   // Only calculate timing score when LLM has completed to prevent showing fallback values
   // Check both llmPending and analysis.summary to ensure TurboToken opinion has loaded
@@ -493,6 +506,40 @@ export default function Dashboard({ selectedCA, tokenData, analysis, loading, er
               value={clusterToLiqRatio > 1 ? 'CRITICAL' : clusterToLiqRatio > 0.5 ? 'HIGH' : 'MODERATE'}
               className={clusterToLiqRatio > 1 ? 'danger' : clusterToLiqRatio > 0.5 ? 'warning' : ''}
             />
+          )}
+          {bundlerDetected && (
+            <Metric
+              label="Bundler Detection"
+              value={bundlerRiskLevel}
+              className={bundlerRiskLevel === 'CRITICAL' ? 'danger' : bundlerRiskLevel === 'HIGH' ? 'warning' : ''}
+            />
+          )}
+          {bundlerDetails && (
+            <p className="details-text" style={{ fontSize: '11px', marginTop: '4px', fontStyle: 'italic' }}>
+              {bundlerDetails}
+            </p>
+          )}
+          {sniperDetected && (
+            <Metric
+              label="Sniper Activity"
+              value={sniperRiskLevel}
+              className={sniperRiskLevel === 'HIGH' ? 'warning' : ''}
+            />
+          )}
+          {sniperDetected && sniperActivity.m5_buys && (
+            <p className="details-text" style={{ fontSize: '11px', marginTop: '4px', fontStyle: 'italic' }}>
+              {sniperActivity.m5_buys} buys in first 5 minutes ({((sniperActivity.ratio || 0) * 100).toFixed(0)}% of 24h buys) - likely snipers
+            </p>
+          )}
+          {kolList.length > 0 && kolList[0] !== 'None detected' && kolList[0] !== 'None' && (
+            <div style={{ marginTop: '12px', padding: '8px', background: '#f0f0f0', border: '1px inset #c0c0c0' }}>
+              <div className="section-header" style={{ fontSize: '11px', marginBottom: '6px' }}>KOL INVOLVEMENT</div>
+              {kolList.map((kol, idx) => (
+                <p key={idx} className="details-text" style={{ fontSize: '11px', margin: '2px 0' }}>
+                  {typeof kol === 'string' ? kol : JSON.stringify(kol)}
+                </p>
+              ))}
+            </div>
           )}
           <p className="details-text" style={{ fontSize: '11px', marginTop: '8px' }}>
             Source: Bubblemaps cluster analysis. Clusters are groups of wallets that may be controlled by the same entity.
